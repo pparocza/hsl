@@ -73,12 +73,12 @@ class Piece {
             const fund = randomFloat( 225 , 300 );
 
             // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
-            this.rC1 = new RampingConvolver( this.globalNow , fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
-            this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
+            // this.rC1 = new RampingConvolver( fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
+            // this.rC2 = new RampingConvolver( fund , 5000 , 3000 , 0.25 , 1 , 2 );
 
-            this.rC3A = new RampingConvolver( this.globalNow , fund , 9000 ,  8500  , 0.25 , fund * randomFloat( 4 , 8 ) , 16 );
-            this.rC3B = new RampingConvolver( this.globalNow , fund , 5000 ,  4500  , 0.125 , fund * randomFloat( 4 , 8 ) , 16 );
-            this.rC3C = new RampingConvolver( this.globalNow + 20 , fund , 800 ,  700  , 0.125 , fund * randomFloat( 8 , 16 ) , 8 );
+            this.rC3A = new RampingConvolver( fund , 9000 ,  8500  , 0.25 , fund * randomFloat( 4 , 8 ) , 16 );
+            this.rC3B = new RampingConvolver( fund , 5000 ,  4500  , 0.125 , fund * randomFloat( 4 , 8 ) , 16 );
+            // this.rC3C = new RampingConvolver( this.globalNow + 20 , fund , 800 ,  700  , 0.125 , fund * randomFloat( 8 , 16 ) , 8 );
 
             // this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
 
@@ -96,8 +96,8 @@ class Piece {
             this.cGain.connect( this.rC3B.input );
             this.rC3B.output.connect( this.cOut );
 
-            this.cGain.connect( this.rC3C.input );
-            this.rC3C.output.connect( this.cOut );
+            // this.cGain.connect( this.rC3C.input );
+            // this.rC3C.output.connect( this.cOut );
 
             // this.cGain.connect( this.rC4.input );
             // this.rC4.output.connect( this.masterGain );
@@ -112,6 +112,9 @@ class Piece {
             this.cD.connect( this.masterGain );
 
             this.cOut.connect( this.masterGain );
+
+            this.rC3A.start( this.globalNow );
+            this.rC3B.start( this.globalNow );
 
     }
 
@@ -160,7 +163,7 @@ class Piece {
 
 class RampingConvolver{
 
-    constructor( startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
+    constructor( fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
 
         this.input = new MyGain( 1 );
         this.output = new MyGain( 1 );
@@ -201,7 +204,6 @@ class RampingConvolver{
         this.noise.playbackRate = noiseRate;
         this.noise.loop = true;
         this.noise.output.gain.value = 0.1;
-        this.noise.startAtTime( startTime );
 
         this.nF = new MyBiquad( 'bandpass' , centerFrequency , 2 );
 
@@ -209,7 +211,6 @@ class RampingConvolver{
         this.nO.sine( 1 , 1 ).fill( 0 );
         this.nO.playbackRate = oscillationRate;
         this.nO.loop = true;
-        this.nO.startAtTime( startTime );
 
         this.nOG = new MyGain( bandwidth );
 
@@ -231,6 +232,13 @@ class RampingConvolver{
         this.d.connect( this.output );
 
         this.c.output.gain.value = gainVal;
+
+    }
+
+    start( startTime , stopTime ){
+
+        this.noise.startAtTime( startTime );
+        this.nO.startAtTime( startTime );
 
     }
 
