@@ -26,23 +26,10 @@ class Piece {
 
         this.cGain = new MyGain( 1 );
         this.rC1 = new RampingConvolver( this.globalNow );
-        this.rC2 = new RampingConvolver( this.globalNow + 10 );
-        this.rC3 = new RampingConvolver( this.globalNow + 20 );
-        this.rC4 = new RampingConvolver( this.globalNow );
-
 
         this.cGain.connect( this.rC1.input );
         this.rC1.output.connect( this.masterGain );
 
-        this.cGain.connect( this.rC2.input );
-        this.rC2.output.connect( this.masterGain );
-
-        this.cGain.connect( this.rC2.input );
-        this.rC3.output.connect( this.masterGain );
-/*
-        this.cGain.connect( this.rC2.input );
-        this.rC4.output.connect( this.masterGain );
-*/
     }
 
     load(){
