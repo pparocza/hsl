@@ -22,18 +22,30 @@ class Piece {
 
     initFXChannels(){
 
+        // TONE CONVOLVER
+        this.cGain = new MyGain( 1 );
+
+        this.c = new MyConvolver();
+        this.cB = new MyBuffer2( 2 , 2 , audioCtx.sampleRate );
+
+        this.cB.sine( 432 , 1 ).fill( 0 );
+        this.cB.sine( 432 * 0.5 , 1 ).fill( 1 );
+        this.cB.ramp( 0 , 1 , 0.5 , 0.6 , 0.1 , 0.1 ).multiply( 0 );
+        this.cB.ramp( 0 , 1 , 0.8 , 0.9 , 0.1 , 0.1 ).multiply( 1 );
+
+        this.c.setBuffer( this.cB.buffer );
+
+        this.cGain.connect( this.c );
+        this.c.connect( this.masterGain );
+
+        this.c.output.gain.value = 1;
+
     }
 
     load(){
 
-        this.filterTickSection = new FilterTickSection( this );
-        this.filterTickSection.load();
-
         this.noisePanSection = new  NoisePanSection( this );
         this.noisePanSection.load();
-
-        this.noiseTickSection = new  NoiseTickSection( this );
-        this.noiseTickSection.load();
 
     }
 
@@ -68,21 +80,31 @@ class NoisePanSection extends Piece {
     load(){
 
         this.nP1 = new NoisePan( this.piece );
-        this.nP1.load( 0.0625 );
+        this.nP1.load( 0.125 );
 
         this.nP2 = new NoisePan( this.piece );
-        this.nP2.load( 0.0625 );
+        this.nP2.load( 0.125 );
 
         this.nP3 = new NoisePan( this.piece );
-        this.nP3.load( 0.0625 );
+        this.nP3.load( 0.125 );
 
     }
 
     start(){
 
-        this.nP1.start( 12 , [ 5000 , 8000 ] , 0 , piece.globalNow + 30 );
-        this.nP2.start( 12 , [ 200 , 500 ] , 0 ,   piece.globalNow + 30 );
-        this.nP3.start( 12 , [ 1000 , 3000 ] , 0 , piece.globalNow + 30 );
+        const rate = 12;
+
+        const filterRangeArray = [
+            [ 5000 , 8000 ] ,
+            [ 200 , 500 ] ,
+            [ 1000 , 3000 ]
+        ]
+
+        shuffle( filterRangeArray );
+
+        this.nP1.start( rate , filterRangeArray[ 0 ] , 0  , piece.globalNow + 30 );
+        this.nP2.start( rate , filterRangeArray[ 1 ] , 10 , piece.globalNow + 30 );
+        this.nP3.start( rate , filterRangeArray[ 2 ] , 15 , piece.globalNow + 30 );
 
     }
 
@@ -97,6 +119,8 @@ class NoisePan extends NoisePanSection {
         this.output = new MyGain( 1 );
 
         this.output.connect( piece.masterGain );
+
+        this.output.connect( piece.cGain );
 
     }
 
