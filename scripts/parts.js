@@ -112,9 +112,9 @@ class NoisePan extends NoisePanSection {
 
         this.output = new MyGain( 1 );
 
-        this.output.connect( piece.masterGain );
+        // this.output.connect( piece.masterGain );
 
-        // this.output.connect( piece.cGain );
+        this.output.connect( piece.cGain );
 
     }
 
