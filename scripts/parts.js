@@ -22,23 +22,17 @@ class Piece {
 
     initFXChannels(){
 
-        // TONE CONVOLVER
+        // RAMPING CONVOLVER
+
         this.cGain = new MyGain( 1 );
+        this.rC1 = new RampingConvolver( 1 );
+        this.rC2 = new RampingConvolver( -1 );
 
-        this.c = new MyConvolver();
-        this.cB = new MyBuffer2( 2 , 2 , audioCtx.sampleRate );
+        this.cGain.connect( this.rC1.input );
+        this.rC1.output.connect( this.masterGain );
 
-        this.cB.sine( 432 , 1 ).fill( 0 );
-        this.cB.sine( 432 * 0.5 , 1 ).fill( 1 );
-        this.cB.ramp( 0 , 1 , 0.5 , 0.6 , 0.1 , 0.1 ).multiply( 0 );
-        this.cB.ramp( 0 , 1 , 0.8 , 0.9 , 0.1 , 0.1 ).multiply( 1 );
-
-        this.c.setBuffer( this.cB.buffer );
-
-        this.cGain.connect( this.c );
-        this.c.connect( this.masterGain );
-
-        this.c.output.gain.value = 1;
+        this.cGain.connect( this.rC2.input );
+        this.rC2.output.connect( this.masterGain );
 
     }
 
@@ -164,6 +158,75 @@ class NoisePan extends NoisePanSection {
         }
 
         this.noise.stopAtTime( stopTime );
+
+    }
+
+}
+
+class RampingConvolver{
+
+    constructor( panValue ){
+
+        this.input = new MyGain( 1 );
+        this.output = new MyGain( 1 );
+
+        this.c = new MyConvolver();
+        this.cB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
+        this.cAB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
+
+        const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ];
+        const oArray = [ 1 , 0.5 , 0.25 ];
+        const fund = 432 * 2;
+
+        let interval = 0;
+        let o = 0;
+        let p = 0;
+
+        for( let i = 0 ; i < 10 ; i++ ){
+
+            interval = randomArrayValue( iArray );
+            o = randomArrayValue( oArray );
+            p = randomFloat( 0.1 , 0.9 );
+
+            this.cAB.fm( fund * interval * o , fund * interval * o , 0.25 ).add( 0 );
+            this.cAB.ramp( p , p + 0.1 , 0.5 , 0.5 , 0.1 , 0.1 ).multiply( 0 );
+
+            this.cB.addBuffer( this.cAB.buffer );
+
+        }
+
+        this.cB.normalize( -1 , 1 );
+
+        bufferGraph( this.cB.buffer );
+
+        this.c.setBuffer( this.cB.buffer );
+
+        this.cR = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
+        this.cR.sawtooth( 1 ).fill( 0 );
+        this.cR.loop = true;
+        this.cR.playbackRate = 0.25;
+
+        this.cG = new MyGain( 0 );
+
+        this.cIB = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
+        this.cIB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 8 ).fill( 0 );
+        this.cIB.playbackRate = 0.5;
+        this.cIB.loop = true;
+    
+        this.cIG = new MyGain( 0 );
+
+        this.p = new MyPanner2( panValue );
+
+        this.input.connect( this.cIG ); this.cIB.connect( this.cIG.gain.gain );
+        this.cIG.connect( this.c );
+        this.c.connect( this.cG ); this.cR.connect( this.cG.gain.gain );
+        this.cG.connect( this.p );
+        this.p.connect( this.output );
+
+        this.c.output.gain.value = 14;
+
+        this.cIB.start();
+        this.cR.start();
 
     }
 
