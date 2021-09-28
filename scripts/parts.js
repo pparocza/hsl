@@ -78,6 +78,9 @@ class Piece {
 
             this.rC3A = new RampingConvolver( fund , 9000 ,  8500  , 0.25 , fund * randomFloat( 4 , 8 ) , 16 );
             this.rC3B = new RampingConvolver( fund , 5000 ,  4500  , 0.125 , fund * randomFloat( 4 , 8 ) , 16 );
+
+            this.rC3C = new RampingConvolver( fund , 9000 ,  8500  , randomFloat( 0.1 , 0.3 ) , fund * randomFloat( 4 , 8 ) , 16 );
+            this.rC3D = new RampingConvolver( fund , 5000 ,  4500  , randomFloat( 0.1 , 0.3 ) , fund * randomFloat( 4 , 8 ) , 16 );
             // this.rC3C = new RampingConvolver( this.globalNow + 20 , fund , 800 ,  700  , 0.125 , fund * randomFloat( 8 , 16 ) , 8 );
 
             // this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
@@ -96,6 +99,12 @@ class Piece {
             this.cGain.connect( this.rC3B.input );
             this.rC3B.output.connect( this.cOut );
 
+            this.cGain.connect( this.rC3C.input );
+            this.rC3C.output.connect( this.cOut );
+                
+            this.cGain.connect( this.rC3D.input );
+            this.rC3D.output.connect( this.cOut );
+
             // this.cGain.connect( this.rC3C.input );
             // this.rC3C.output.connect( this.cOut );
 
@@ -113,8 +122,15 @@ class Piece {
 
             this.cOut.connect( this.masterGain );
 
-            this.rC3A.start( this.globalNow );
-            this.rC3B.start( this.globalNow );
+            this.rC3A.start( this.globalNow , this.globalNow + 30 );
+            this.rC3B.start( this.globalNow , this.globalNow + 30 );
+
+            this.rC3C.start( this.globalNow + 25 , this.globalNow + 55 );
+            this.rC3D.start( this.globalNow + 25 , this.globalNow + 55 );
+
+            this.rC3A.start( this.globalNow + 53 , this.globalNow + 83 );
+            this.rC3B.start( this.globalNow + 53 , this.globalNow + 83 );
+
 
     }
 
@@ -239,6 +255,9 @@ class RampingConvolver{
 
         this.noise.startAtTime( startTime );
         this.nO.startAtTime( startTime );
+
+        this.noise.stopAtTime( stopTime );
+        this.nO.stopAtTime( stopTime );
 
     }
 
