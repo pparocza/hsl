@@ -25,32 +25,31 @@ class Piece {
         // RAMPING CONVOLVER
 
         this.cGain = new MyGain( 1 );
+        const fund = 300;
 
-        // startTime , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
-        this.rC1 = new RampingConvolver( this.globalNow , 2000 , 1000 , 0.25 , 0.25 , 8 );
-        this.rC2 = new RampingConvolver( this.globalNow , 5000 , 3000 , 0.25 , 432 , 4 );
-        this.rC3 = new RampingConvolver( this.globalNow , 800 ,  500  , 1 , 5 , 3 );
-        this.rC4 = new RampingConvolver( this.globalNow , 5000 , 3500 , 0.1 , 0.25 , 4 );
-
+        // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
+        this.rC1 = new RampingConvolver( this.globalNow , fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
+        this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
+        this.rC3 = new RampingConvolver( this.globalNow , fund , 800 ,  500  , 1 , 5 , 1 );
+        this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
 
         this.cGain.connect( this.rC1.input );
         this.rC1.output.connect( this.masterGain );
-/*
-        this.cGain.connect( this.rC1.input );
-        this.rC1.output.connect( this.masterGain );
 
-        this.cGain.connect( this.rC3.input );
-        this.rC3.output.connect( this.masterGain );
-    
+        this.cGain.connect( this.rC2.input );
+        this.rC2.output.connect( this.masterGain );
 
-        this.cGain.connect( this.rC4.input );
-        this.rC4.output.connect( this.masterGain );
-*/
+        // this.cGain.connect( this.rC3.input );
+        // this.rC3.output.connect( this.masterGain );
+
+        // this.cGain.connect( this.rC4.input );
+        // this.rC4.output.connect( this.masterGain );
 
     }
 
     load(){
 
+        this.loadSynthSection();
 
     }
 
@@ -58,6 +57,8 @@ class Piece {
 
         this.fadeFilter.start(1, 50);
 		this.globalNow = audioCtx.currentTime;
+
+        this.startSynthSection();
 
     }
 
@@ -68,11 +69,30 @@ class Piece {
 
     }
 
+    loadSynthSection(){
+
+        this.synth1 = new Synth( this );
+        this.synth1.load();
+
+    }
+
+    startSynthSection(){
+
+        this.synth1.start();
+
+        const fund = 300 * 0.5;
+
+        this.synth1.play( this.globalNow + 0 , 0.5 , fund * M6 , 0.25 );
+        this.synth1.play( this.globalNow + 2 , 0.5 , fund * M6 * P5 , 0.25 );
+        this.synth1.play( this.globalNow + 5 , 0.5 , fund * M6 / M2 , 0.25 );
+
+    }
+
 }
 
 class RampingConvolver{
 
-    constructor( startTime , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
+    constructor( startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
 
         this.input = new MyGain( 1 );
         this.output = new MyGain( 1 );
@@ -82,8 +102,7 @@ class RampingConvolver{
         this.cAB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
 
         const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ];
-        const oArray = [ 1 , 0.5 , 2 ];
-        const fund = 432 * 1;
+        const oArray = [ 1 , 0.5 , 2];
 
         let interval = 0;
         let o = 0;
@@ -144,6 +163,72 @@ class RampingConvolver{
         this.d.connect( this.output );
 
         this.c.output.gain.value = gainVal;
+
+    }
+
+}
+
+class Synth{
+
+    constructor( piece ){
+
+        this.output = new MyGain( 1 );
+        this.output.connect( piece.masterGain );
+
+    }
+
+    load(){
+
+        this.oscBuffer = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
+
+        for( let i = 0 ; i < 20 ; i++ ){
+
+            this.oscBuffer.sine( 1 * randomFloat( 0.99 , 1.01 ) * randomArrayValue( [ 1 , 2 , 4 , 0.5 ] ) , randomFloat( 0.5 , 1 ) ).add( 0 );
+
+        }
+
+        this.oscBuffer.sawtooth( 4 ).add( 0 );
+        this.oscBuffer.square( 0.5 ).add( 0 );
+
+        this.oscBuffer.normalize( -1 , 1 );
+
+        this.oscBuffer.playbackRate = 493.88;
+        this.oscBuffer.loop = true;
+
+        this.envBuffer = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
+        this.envBuffer.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).fill( 0 );
+        this.envBuffer.playbackRate = 1;
+
+        this.envGain = new MyGain( 0 );
+
+        this.delay = new Effect();
+        this.delay.stereoDelay( 0.5 , 0.7 , 0.3 );
+        this.delay.on();
+
+        this.oscBuffer.connect( this.envGain ); this.envBuffer.connect( this.envGain.gain.gain );
+        
+        this.envGain.connect( this.delay );
+
+        this.envGain.connect( this.output ); 
+        this.delay.connect( this.output );
+
+    }
+
+    start(){
+
+        this.oscBuffer.start();
+
+    }
+
+    play( startTime , duration , frequency , gainVal ){
+
+        const envelopeRate = 1 / duration;
+
+        this.oscBuffer.bufferSource.playbackRate.setValueAtTime( frequency , startTime );
+        this.envBuffer.output.gain.setValueAtTime( gainVal , startTime );
+
+        this.envBuffer.startAtTime( startTime );
+        this.envBuffer.bufferSource.playbackRate.setValueAtTime( envelopeRate , startTime );
 
     }
 
