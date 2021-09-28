@@ -1,6 +1,6 @@
 var audioCtx;
 var offlineAudioCtx;
-var pieceLength = 40;
+var pieceLength = 100;
 
 function init(){
 

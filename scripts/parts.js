@@ -25,10 +25,27 @@ class Piece {
         // RAMPING CONVOLVER
 
         this.cGain = new MyGain( 1 );
-        this.rC1 = new RampingConvolver( this.globalNow );
+
+        // startTime , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
+        this.rC1 = new RampingConvolver( this.globalNow , 2000 , 1000 , 0.25 , 0.25 , 8 );
+        this.rC2 = new RampingConvolver( this.globalNow , 5000 , 3000 , 0.25 , 432 , 4 );
+        this.rC3 = new RampingConvolver( this.globalNow , 800 ,  500  , 1 , 5 , 3 );
+        this.rC4 = new RampingConvolver( this.globalNow , 5000 , 3500 , 0.1 , 0.25 , 4 );
+
 
         this.cGain.connect( this.rC1.input );
         this.rC1.output.connect( this.masterGain );
+/*
+        this.cGain.connect( this.rC1.input );
+        this.rC1.output.connect( this.masterGain );
+
+        this.cGain.connect( this.rC3.input );
+        this.rC3.output.connect( this.masterGain );
+    
+
+        this.cGain.connect( this.rC4.input );
+        this.rC4.output.connect( this.masterGain );
+*/
 
     }
 
@@ -55,7 +72,7 @@ class Piece {
 
 class RampingConvolver{
 
-    constructor( startTime ){
+    constructor( startTime , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
 
         this.input = new MyGain( 1 );
         this.output = new MyGain( 1 );
@@ -94,12 +111,25 @@ class RampingConvolver{
 
         this.noise = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
         this.noise.noise().fill( 0 );
-        this.noise.playbackRate = 0.25;
+        this.noise.playbackRate = noiseRate;
         this.noise.loop = true;
         this.noise.output.gain.value = 0.1;
         this.noise.startAtTime( startTime );
 
-        this.noise.connect( this.c );
+        this.nF = new MyBiquad( 'bandpass' , centerFrequency , 2 );
+
+        this.nO = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
+        this.nO.sine( 1 , 1 ).fill( 0 );
+        this.nO.playbackRate = oscillationRate;
+        this.nO.loop = true;
+        this.nO.startAtTime( startTime );
+
+        this.nOG = new MyGain( bandwidth );
+
+        this.nO.connect( this.nOG );
+        this.nOG.connect( this.nF.biquad.frequency );
+        this.noise.connect( this.nF );
+        this.nF.connect( this.c );
 
         // DELAY
 
@@ -113,7 +143,7 @@ class RampingConvolver{
         this.c.connect( this.d );
         this.d.connect( this.output );
 
-        this.c.output.gain.value = 1;
+        this.c.output.gain.value = gainVal;
 
     }
 
