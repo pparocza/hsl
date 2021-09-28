@@ -58,7 +58,7 @@ class Piece {
         this.fadeFilter.start(1, 50);
 		this.globalNow = audioCtx.currentTime;
 
-        this.startSynthSection();
+        // this.startSynthSection();
 
     }
 
@@ -183,12 +183,9 @@ class Synth{
 
         for( let i = 0 ; i < 20 ; i++ ){
 
-            this.oscBuffer.sine( 1 * randomFloat( 0.99 , 1.01 ) * randomArrayValue( [ 1 , 2 , 4 , 0.5 ] ) , randomFloat( 0.5 , 1 ) ).add( 0 );
+            this.oscBuffer.sine( 1 * randomFloat( 0.99 , 1.01 ) * randomArrayValue( [ 1 , 2 , 4 , 0.5 , 8 ] ) , randomFloat( 0.5 , 1 ) ).add( 0 );
 
         }
-
-        this.oscBuffer.sawtooth( 4 ).add( 0 );
-        this.oscBuffer.square( 0.5 ).add( 0 );
 
         this.oscBuffer.normalize( -1 , 1 );
 
@@ -201,16 +198,41 @@ class Synth{
 
         this.envGain = new MyGain( 0 );
 
+        // DELAY
+
         this.delay = new Effect();
         this.delay.stereoDelay( 0.5 , 0.7 , 0.3 );
         this.delay.on();
+        this.delay.output.gain.value = 0.5;
+
+        // REVERB
+
+        this.c = new MyConvolver();
+        this.cB = new MyBuffer2( 2 , 2 , audioCtx.sampleRate );
+        this.cB.noise().add( 0 );
+        this.cB.noise().add( 1 );
+        this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 0 );
+        this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 1 );
+
+        this.c.setBuffer( this.cB.buffer );
+
+        this.c.output.gain.value = 3;
+
+        // FILTER
+
+        this.filter = new MyBiquad( 'lowpass' , 1000 , 1 );
+
+        // CONNECTIONS
 
         this.oscBuffer.connect( this.envGain ); this.envBuffer.connect( this.envGain.gain.gain );
-        
-        this.envGain.connect( this.delay );
+        this.envGain.connect( this.filter );
 
-        this.envGain.connect( this.output ); 
+        this.filter.connect( this.delay );
+        this.envGain.connect( this.c );
+
+        this.filter.connect( this.output ); 
         this.delay.connect( this.output );
+        this.c.connect( this.output );
 
     }
 
