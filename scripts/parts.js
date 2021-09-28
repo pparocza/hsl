@@ -114,7 +114,7 @@ class NoisePan extends NoisePanSection {
 
         this.output.connect( piece.masterGain );
 
-        this.output.connect( piece.cGain );
+        // this.output.connect( piece.cGain );
 
     }
 
@@ -196,8 +196,6 @@ class RampingConvolver{
         }
 
         this.cB.normalize( -1 , 1 );
-
-        bufferGraph( this.cB.buffer );
 
         this.c.setBuffer( this.cB.buffer );
 
