@@ -21,82 +21,29 @@ class Piece {
     }
 
     initFXChannels(){
-        
-        // REVERB
-
-            this.c = new MyConvolver();
-            this.cB = new MyBuffer2( 2 , 3 , audioCtx.sampleRate );
-            this.cB.noise().add( 0 );
-            this.cB.noise().add( 1 );
-            this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 0 );
-            this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 1 );
-
-            this.c.setBuffer( this.cB.buffer );
-
-            this.cIn = new MyGain( 0 );
-            this.cE = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
-            this.cEAB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
-
-            let p = 0;
-
-            for( let i = 0 ; i < 10 ; i++ ){
-
-                p = randomFloat( 0.1 , 0.9 );
-
-                this.cEAB.constant( 0 ).fill( 0 );
-
-                this.cEAB.ramp( p , p + 0.025 , 0.5 , 0.5 , 0.1 , 0.1 ).add( 0 );
-                this.cEAB.constant( randomFloat( 0.5 , 1 ) ).multiply( 0 );
-
-                this.cE.addBuffer( this.cEAB.buffer );
-
-            }
-
-            this.cE.normalize( 0 , 1 );
-
-            this.cE.playbackRate = 0.5;
-            this.cE.loop = true;
-            this.cE.start();
-
-            this.c.output.gain.value = 1;
-
-            this.cF = new MyBiquad( 'highpass' , 500 , 1 );
-
-            this.cD = new Effect();
-            this.cD.randomEcho();
-            this.cD.on();
 
         // RAMPING CONVOLVER
 
-            this.cGain = new MyGain( 1 );
-            this.cOut = new MyGain( 1 );
-            const fund = randomFloat( 225 , 300 );
+        this.cGain = new MyGain( 1 );
+        const fund = 300;
 
-            // startTime , bufferLength , fund , frequencyRange , noiseRate , impulseRate , gain
-            this.rC1 = new ImpulseConvolver( fund , 2 , [ 1000 , 5000 ]  , 0.25 , 1 , 24 );
-            this.rC2 = new ImpulseConvolver( fund , 2 , [ 100 , 1000 ]  , 0.25 , 0.5 , 24 );
-            this.rC3 = new ImpulseConvolver( fund , 0.1 , [ 5000 , 10000 ]  , 0.25 , 0.125 , 12 );
-            this.rC4 = new ImpulseConvolver( fund , 0.1 , [ 5000 , 10000 ]  , 0.25 , 0.125 , 24 );
-            
-            this.rC1.output.connect( this.masterGain );
-            this.rC2.output.connect( this.masterGain );
-            this.rC3.output.connect( this.masterGain );
-            this.rC4.output.connect( this.masterGain );
+        // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
+        this.rC1 = new RampingConvolver( this.globalNow , fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
+        this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
+        this.rC3 = new RampingConvolver( this.globalNow , fund , 800 ,  500  , 1 , 5 , 1 );
+        this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
 
-            this.rC1.output.connect( this.c );
-            this.rC2.output.connect( this.c );
-            this.rC3.output.connect( this.c );
-            this.rC4.output.connect( this.c );
+        this.cGain.connect( this.rC1.input );
+        this.rC1.output.connect( this.masterGain );
 
-            this.c.connect( this.cD);
+        this.cGain.connect( this.rC2.input );
+        this.rC2.output.connect( this.masterGain );
 
-            this.c.connect( this.masterGain );
-            this.cD.connect( this.masterGain );
+        // this.cGain.connect( this.rC3.input );
+        // this.rC3.output.connect( this.masterGain );
 
-            this.rC1.start( this.globalNow + 0 , this.globalNow + 100 );
-            this.rC2.start( this.globalNow + 0 , this.globalNow + 100 );
-            this.rC3.start( this.globalNow + 0 , this.globalNow + 100 );
-            this.rC4.start( this.globalNow + 0 , this.globalNow + 100 );
+        // this.cGain.connect( this.rC4.input );
+        // this.rC4.output.connect( this.masterGain );
 
     }
 
@@ -145,7 +92,7 @@ class Piece {
 
 class RampingConvolver{
 
-    constructor( fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
+    constructor( startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gainVal ){
 
         this.input = new MyGain( 1 );
         this.output = new MyGain( 1 );
@@ -186,6 +133,7 @@ class RampingConvolver{
         this.noise.playbackRate = noiseRate;
         this.noise.loop = true;
         this.noise.output.gain.value = 0.1;
+        this.noise.startAtTime( startTime );
 
         this.nF = new MyBiquad( 'bandpass' , centerFrequency , 2 );
 
@@ -193,6 +141,7 @@ class RampingConvolver{
         this.nO.sine( 1 , 1 ).fill( 0 );
         this.nO.playbackRate = oscillationRate;
         this.nO.loop = true;
+        this.nO.startAtTime( startTime );
 
         this.nOG = new MyGain( bandwidth );
 
@@ -214,16 +163,6 @@ class RampingConvolver{
         this.d.connect( this.output );
 
         this.c.output.gain.value = gainVal;
-
-    }
-
-    start( startTime , stopTime ){
-
-        this.noise.startAtTime( startTime );
-        this.nO.startAtTime( startTime );
-
-        this.noise.stopAtTime( stopTime );
-        this.nO.stopAtTime( stopTime );
 
     }
 
@@ -312,101 +251,6 @@ class Synth{
 
         this.envBuffer.startAtTime( startTime );
         this.envBuffer.bufferSource.playbackRate.setValueAtTime( envelopeRate , startTime );
-
-    }
-
-}
-
-class ImpulseConvolver{
-
-    constructor( fund , bufferLength , frequencyRange , noiseRate , impulseRate , gainVal ){
-
-        this.input = new MyGain( 1 );
-        this.output = new MyGain( 1 );
-
-        this.noiseRate = noiseRate;
-        this.impulseRate = impulseRate;
-        this.frequencyRange = frequencyRange;
-
-        this.c = new MyConvolver();
-        this.cB = new MyBuffer2( 1 , bufferLength , audioCtx.sampleRate );
-        this.cAB = new MyBuffer2( 1 , bufferLength , audioCtx.sampleRate );
-
-        const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ];
-        const oArray = [ 1 , 0.5 , 2 , 4];
-
-        let interval = 0;
-        let o = 0;
-        let p = 0;
-
-        for( let i = 0 ; i < 20 ; i++ ){
-
-            interval = randomArrayValue( iArray );
-            o = randomArrayValue( oArray );
-            p = randomFloat( 0.1 , 0.9 );
-
-            this.cAB.fm( fund * interval * o , fund * interval * o , 0.5 ).add( 0 );
-            this.cAB.constant( 1 / o ).multiply( 0 );
-            this.cAB.ramp( p , p + 0.1 , 0.5 , 0.5 , 0.1 , 0.1 ).multiply( 0 );
-
-            this.cB.addBuffer( this.cAB.buffer );
-
-        }
-
-        this.cB.normalize( -1 , 1 );
-
-        this.c.setBuffer( this.cB.buffer );
-
-        // NOISE
-
-        this.noise = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
-        this.noise.noise().fill( 0 );
-        this.noise.playbackRate = this.noiseRate;
-        this.noise.loop = true;
-        this.noise.output.gain.value = 0.1;
-
-        this.noiseEnvelope = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
-        this.noiseEnvelope.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 3 ).fill( 0 );
-        this.noiseEnvelope.playbackRate = this.impulseRate;
-        this.noiseEnvelope.loop = true;
-
-        this.noiseEnvelopeGain = new MyGain( 0 );
-
-        this.nF = new MyBiquad( 'bandpass' , 0 , 5 );
-
-        this.hp = new MyBiquad( 'highpass' , 20 , 1 );
-
-        this.noise.connect( this.noiseEnvelopeGain ); this.noiseEnvelope.connect( this.noiseEnvelopeGain.gain.gain );
-        this.noiseEnvelopeGain.connect( this.nF );
-        this.nF.connect( this.c );
-
-        this.input.connect( this.c );
-        this.c.connect( this.hp );
-        this.hp.connect( this.output );
-
-        this.c.output.gain.value = gainVal;
-
-    }
-
-    start( startTime , stopTime ){
-
-        this.noise.startAtTime( startTime );
-        this.noiseEnvelope.startAtTime( startTime );
-
-        this.noise.stopAtTime( stopTime );
-        this.noiseEnvelope.stopAtTime( stopTime );
-        
-
-        let rate = 1 / this.impulseRate;
-        let time = 0;
-
-        for( let i = 0 ; i < 1000 ; i++ ){
-
-            time = i * rate;
-
-            this.nF.biquad.frequency.setValueAtTime( randomFloat( this.frequencyRange[0] , this.frequencyRange[1] ) , time );
-
-        }
 
     }
 
