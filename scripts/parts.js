@@ -21,29 +21,97 @@ class Piece {
     }
 
     initFXChannels(){
+        
+        // REVERB
+
+            this.c = new MyConvolver();
+            this.cB = new MyBuffer2( 2 , 3 , audioCtx.sampleRate );
+            this.cB.noise().add( 0 );
+            this.cB.noise().add( 1 );
+            this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 0 );
+            this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 1 );
+
+            this.c.setBuffer( this.cB.buffer );
+
+            this.cIn = new MyGain( 0 );
+            this.cE = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
+            this.cEAB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
+
+            let p = 0;
+
+            for( let i = 0 ; i < 10 ; i++ ){
+
+                p = randomFloat( 0.1 , 0.9 );
+
+                this.cEAB.constant( 0 ).fill( 0 );
+
+                this.cEAB.ramp( p , p + 0.025 , 0.5 , 0.5 , 0.1 , 0.1 ).add( 0 );
+                this.cEAB.constant( randomFloat( 0.5 , 1 ) ).multiply( 0 );
+
+                this.cE.addBuffer( this.cEAB.buffer );
+
+            }
+
+            this.cE.normalize( 0 , 1 );
+
+            this.cE.playbackRate = 0.5;
+            this.cE.loop = true;
+            this.cE.start();
+
+            this.c.output.gain.value = 6;
+
+            this.cF = new MyBiquad( 'highpass' , 500 , 1 );
+
+            this.cD = new Effect();
+            this.cD.randomEcho();
+            this.cD.on();
 
         // RAMPING CONVOLVER
 
-        this.cGain = new MyGain( 1 );
-        const fund = 300;
+            this.cGain = new MyGain( 1 );
+            this.cOut = new MyGain( 1 );
+            const fund = randomFloat( 225 , 300 );
 
-        // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
-        this.rC1 = new RampingConvolver( this.globalNow , fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
-        this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
-        this.rC3 = new RampingConvolver( this.globalNow , fund , 800 ,  500  , 1 , 5 , 1 );
-        this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
+            // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
+            this.rC1 = new RampingConvolver( this.globalNow , fund , 2000 , 1000 , 0.25 , 0.25 , 8 );
+            this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
 
-        this.cGain.connect( this.rC1.input );
-        this.rC1.output.connect( this.masterGain );
+            this.rC3A = new RampingConvolver( this.globalNow , fund , 9000 ,  8500  , 0.25 , fund * randomFloat( 4 , 8 ) , 16 );
+            this.rC3B = new RampingConvolver( this.globalNow , fund , 5000 ,  4500  , 0.125 , fund * randomFloat( 4 , 8 ) , 16 );
+            this.rC3C = new RampingConvolver( this.globalNow + 20 , fund , 800 ,  700  , 0.125 , fund * randomFloat( 8 , 16 ) , 8 );
 
-        this.cGain.connect( this.rC2.input );
-        this.rC2.output.connect( this.masterGain );
+            // this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
 
-        // this.cGain.connect( this.rC3.input );
-        // this.rC3.output.connect( this.masterGain );
+        // CONNECTIONS
 
-        // this.cGain.connect( this.rC4.input );
-        // this.rC4.output.connect( this.masterGain );
+            // this.cGain.connect( this.rC1.input );
+            // this.rC1.output.connect( this.masterGain );
+
+            // this.cGain.connect( this.rC2.input );
+            // this.rC2.output.connect( this.masterGain );
+
+            this.cGain.connect( this.rC3A.input );
+            this.rC3A.output.connect( this.cOut );
+                
+            this.cGain.connect( this.rC3B.input );
+            this.rC3B.output.connect( this.cOut );
+
+            this.cGain.connect( this.rC3C.input );
+            this.rC3C.output.connect( this.cOut );
+
+            // this.cGain.connect( this.rC4.input );
+            // this.rC4.output.connect( this.masterGain );
+
+            this.cOut.connect( this.cIn ); this.cE.connect( this.cIn.gain.gain );
+            this.cIn.connect( this.c );
+            this.c.connect( this.cF );
+
+            this.cF.connect( this.cD );
+
+            this.cF.connect( this.masterGain );
+            this.cD.connect( this.masterGain );
+
+            this.cOut.connect( this.masterGain );
 
     }
 
