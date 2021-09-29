@@ -22,32 +22,51 @@ class Piece {
 
     initFXChannels(){
 
-        // RAMPING CONVOLVER
-
-        this.cGain = new MyGain( 1 );
-        const fund = 300;
-        const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ];
-        const oArray = [ 1 , 0.5 , 2 , 0.25 , 4 ];
-
-        // fund , bufferLength , iArray , oArray , centerFrequency , bandwidth , Q , fmCFreq , fmMFreq , oscillationRate , noiseRate , gain
-        this.rC2 = new RampingConvolver( fund , 0.25 , iArray , oArray , 12000 , 11750 , 5 , randomInt( 1 , 10 ) , randomInt( 1 , 10 ) ,  0.125 , 0.25 , 8 );
-
-        // this.cGain.connect( this.rC1.input );
-        // this.rC1.output.connect( this.masterGain );
-
-        this.cGain.connect( this.rC2.input );
-        this.rC2.output.connect( this.masterGain );
-
-        this.rC2.start( this.globalNow , this.globalNow + 100 );
-
-        // this.cGain.connect( this.rC3.input );
-        // this.rC3.output.connect( this.masterGain );
-
     }
 
     load(){
 
-        this.loadSynthSection();
+        this.loadRampingConvolvers();
+
+    }
+
+    loadRampingConvolvers(){
+
+        const fund = 300;
+        const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ]
+
+        this.rC1 = new RampingConvolver( 
+            // fund
+            fund , 
+            // bufferLength
+            2 , 
+            // intervalArray
+            iArray , 
+            // octaveArray
+            [ 1 , 0.5 , 2 , 0.25 , 4 ] ,
+            // cFreq 
+            12000 , 
+            // bandwidth
+            11750 , 
+            // Q
+            5 , 
+            // fmCFreq , fmMFreq
+            randomInt( 1 , 10 ) , randomInt( 1 , 10 ) ,  
+            // oscillationRate
+            0.125 , 
+            // noiseRate
+            0.25 , 
+            // gain
+            8 
+            );
+
+        this.rC1.output.connect( this.masterGain );
+
+    }
+
+    startRampingConvolvers(){
+
+        this.rC1.start( this.globalNow , this.globalNow + 100 );
 
     }
 
@@ -56,7 +75,7 @@ class Piece {
         this.fadeFilter.start(1, 50);
 		this.globalNow = audioCtx.currentTime;
 
-        // this.startSynthSection();
+        this.startRampingConvolvers();
 
     }
 
