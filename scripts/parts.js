@@ -28,7 +28,7 @@ class Piece {
         const fund = 300;
 
         // startTime , fund , centerFrequency , bandwidth , oscillationRate , noiseRate , gain
-        this.rC1 = new RampingConvolver( this.globalNow , fund , 5000 , 4500 , 0.125 , 0.25 , 8 );
+        this.rC1 = new RampingConvolver( this.globalNow , fund , 5000 , 4500 , 0.1 , 0.25 , 8 );
         // this.rC2 = new RampingConvolver( this.globalNow , fund , 5000 , 3000 , 0.25 , 1 , 2 );
         // this.rC3 = new RampingConvolver( this.globalNow , fund , 800 ,  500  , 1 , 5 , 1 );
         // this.rC4 = new RampingConvolver( this.globalNow , fund , 5000 , 3500 , 0.1 , 0.25 , 4 );
@@ -102,7 +102,7 @@ class RampingConvolver{
         this.cAB = new MyBuffer2( 1 , 2 , audioCtx.sampleRate );
 
         const iArray = [ 1 , M2 , M3 , P4 , P5 , M6 , 2 ];
-        const oArray = [ 1 , 0.5 , 2];
+        const oArray = [ 1 , 0.5 , 2 , 4 , 0.25 ];
 
         let interval = 0;
         let o = 0;
@@ -138,7 +138,7 @@ class RampingConvolver{
         this.nF = new MyBiquad( 'bandpass' , centerFrequency , 2 );
 
         this.nO = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
-        this.nO.fm( 3 , 5 , 1 ).fill( 0 );
+        this.nO.fm( randomInt( 1 , 10 ) , randomInt( 1 , 10 ) , 1 ).fill( 0 );
         this.nO.playbackRate = oscillationRate;
         this.nO.loop = true;
         this.nO.startAtTime( startTime );
