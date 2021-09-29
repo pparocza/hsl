@@ -144,25 +144,6 @@ class Piece {
 
     }
 
-    loadSynthSection(){
-
-        this.synth1 = new Synth( this );
-        this.synth1.load();
-
-    }
-
-    startSynthSection(){
-
-        this.synth1.start();
-
-        const fund = 300 * 0.5;
-
-        this.synth1.play( this.globalNow + 0 , 0.5 , fund * M6 , 0.25 );
-        this.synth1.play( this.globalNow + 2 , 0.5 , fund * M6 * P5 , 0.25 );
-        this.synth1.play( this.globalNow + 5 , 0.5 , fund * M6 / M2 , 0.25 );
-
-    }
-
 }
 
 class RampingConvolver extends Piece{
@@ -251,94 +232,6 @@ class RampingConvolver extends Piece{
 
         this.noise.stopAtTime( stopTime );
         this.nO.stopAtTime( stopTime );
-
-    }
-
-}
-
-class Synth{
-
-    constructor( piece ){
-
-        this.output = new MyGain( 1 );
-        this.output.connect( piece.masterGain );
-
-    }
-
-    load(){
-
-        this.oscBuffer = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
-
-        for( let i = 0 ; i < 20 ; i++ ){
-
-            this.oscBuffer.sine( 1 * randomFloat( 0.99 , 1.01 ) * randomArrayValue( [ 1 , 2 , 4 , 0.5 , 8 ] ) , randomFloat( 0.5 , 1 ) ).add( 0 );
-
-        }
-
-        this.oscBuffer.normalize( -1 , 1 );
-
-        this.oscBuffer.playbackRate = 493.88;
-        this.oscBuffer.loop = true;
-
-        this.envBuffer = new MyBuffer2( 1 , 1 , audioCtx.sampleRate );
-        this.envBuffer.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).fill( 0 );
-        this.envBuffer.playbackRate = 1;
-
-        this.envGain = new MyGain( 0 );
-
-        // DELAY
-
-        this.delay = new Effect();
-        this.delay.stereoDelay( 0.5 , 0.7 , 0.3 );
-        this.delay.on();
-        this.delay.output.gain.value = 0.5;
-
-        // REVERB
-
-        this.c = new MyConvolver();
-        this.cB = new MyBuffer2( 2 , 2 , audioCtx.sampleRate );
-        this.cB.noise().add( 0 );
-        this.cB.noise().add( 1 );
-        this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 0 );
-        this.cB.ramp( 0 , 1 , 0.01 , 0.015 , 0.1 , 4 ).multiply( 1 );
-
-        this.c.setBuffer( this.cB.buffer );
-
-        this.c.output.gain.value = 3;
-
-        // FILTER
-
-        this.filter = new MyBiquad( 'lowpass' , 1000 , 1 );
-
-        // CONNECTIONS
-
-        this.oscBuffer.connect( this.envGain ); this.envBuffer.connect( this.envGain.gain.gain );
-        this.envGain.connect( this.filter );
-
-        this.filter.connect( this.delay );
-        this.envGain.connect( this.c );
-
-        this.filter.connect( this.output ); 
-        this.delay.connect( this.output );
-        this.c.connect( this.output );
-
-    }
-
-    start(){
-
-        this.oscBuffer.start();
-
-    }
-
-    play( startTime , duration , frequency , gainVal ){
-
-        const envelopeRate = 1 / duration;
-
-        this.oscBuffer.bufferSource.playbackRate.setValueAtTime( frequency , startTime );
-        this.envBuffer.output.gain.setValueAtTime( gainVal , startTime );
-
-        this.envBuffer.startAtTime( startTime );
-        this.envBuffer.bufferSource.playbackRate.setValueAtTime( envelopeRate , startTime );
 
     }
 
