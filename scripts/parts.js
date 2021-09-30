@@ -18,7 +18,7 @@ class Piece {
         this.ls.biquad.gain.value = -2.67;
     
         this.masterGain = audioCtx.createGain();
-        this.masterGain.connect( this.hp );
+        this.masterGain.connect( this.hp.input );
         this.hp.connect( this.ls );
         this.ls.connect( this.gain );
         this.gain.connect( this.fadeFilter.input );
