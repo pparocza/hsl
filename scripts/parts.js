@@ -49,7 +49,7 @@ class Piece {
 
     loadRampingConvolvers(){
 
-        const fund = 300;
+        const fund = randomFloat( 225 , 325 ); // 300
         const iArray = [ 1 , M2 , P4 , P5 , M6 ];
         this.globalRate = 0.125;
 
@@ -73,7 +73,7 @@ class Piece {
             // bandwidth
             11750 , 
             // Q
-            5 , 
+            2 , 
             // fmCFreq , fmMFreq
             randomFloat( 1 , 5 ) , randomFloat( 1 , 5 ) ,  
             // oscillationRate
@@ -98,7 +98,7 @@ class Piece {
             // bandwidth
             11750 , 
             // Q
-            5 , 
+            4 , 
             // fmCFreq , fmMFreq
             randomInt( 1 , 10 ) , randomInt( 1 , 10 ) ,  
             // oscillationRate
@@ -148,7 +148,7 @@ class Piece {
             // bandwidth
             11750 , 
             // Q
-            5 , 
+            2 , 
             // fmCFreq , fmMFreq
             randomInt( 1 , 10 ) , randomInt( 1 , 10 ) ,  
             // oscillationRate
@@ -309,7 +309,7 @@ class RampingConvolver extends Piece{
 
         this.c.connect( this.output );
         this.d.connect( this.output );
-        this.s.connect( this.output );
+        // this.s.connect( this.output );
 
         this.c.output.gain.value = gainVal;
 
