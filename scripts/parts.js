@@ -12,11 +12,17 @@ class Piece {
         this.gain.gain.value = 1;
     
         this.fadeFilter = new FilterFade(0);
+
+        this.hp = new MyBiquad( 'highpass' , 30.225 , 0.581 );
+        this.ls = new MyBiquad( 'lowshelf' , 695.22 , 1 );
+        this.ls.biquad.gain.value = -2.67;
     
         this.masterGain = audioCtx.createGain();
-        this.masterGain.connect(this.gain);
-        this.gain.connect(this.fadeFilter.input);
-        this.fadeFilter.connect(audioCtx.destination);
+        this.masterGain.connect( this.hp );
+        this.hp.connect( this.ls );
+        this.ls.connect( this.gain );
+        this.gain.connect( this.fadeFilter.input );
+        this.fadeFilter.connect( audioCtx.destination );
 
     }
 
