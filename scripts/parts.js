@@ -9,18 +9,26 @@ class Piece {
         this.globalNow = 0;
 
         this.gain = audioCtx.createGain();
-        this.gain.gain.value = 3;
+        this.gain.gain.value = 2;
     
         this.fadeFilter = new FilterFade(0);
 
         this.hp = new MyBiquad( 'highpass' , 30.225 , 0.581 );
         this.ls = new MyBiquad( 'lowshelf' , 695.22 , 1 );
         this.ls.biquad.gain.value = -2.67;
+        this.ls2 = new MyBiquad( 'lowshelf' , 162.24 , 1 );
+        this.ls2.biquad.gain.value = -3.13;
+        this.f = new MyBiquad( 'peaking' , 279.5 , 1.586 );
+        this.f.biquad.gain.value = -2.20;
+        this.f2 = new MyBiquad( 'peaking' , 2557.9 , 1 );
+        this.f2.biquad.gain.value = 1.38;
     
         this.masterGain = audioCtx.createGain();
         this.masterGain.connect( this.hp.input );
         this.hp.connect( this.ls );
-        this.ls.connect( this.gain );
+        this.ls.connect( this.ls2 );
+        this.ls2.connect( this.f );
+        this.f.connect( this.gain );
         this.gain.connect( this.fadeFilter.input );
         this.fadeFilter.connect( audioCtx.destination );
 
@@ -57,6 +65,7 @@ class Piece {
 
         const fund = randomFloat( 225 , 325 ); // 300
         const iArray = [ 1 , M2 , P4 , P5 , M6 ];
+        const iArray2 = [ 1 , M3 , P5 , 1/M2 , M6 ];
         this.globalRate = 0.125;
 
         this.rC1 = new RampingConvolver( this );
@@ -137,7 +146,7 @@ class Piece {
             // noiseRate
             0.25 , 
             // gain
-            3 
+            5 
         );
 
         this.rC4.load(
