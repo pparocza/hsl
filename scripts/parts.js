@@ -9,7 +9,7 @@ class Piece {
         this.globalNow = 0;
 
         this.gain = audioCtx.createGain();
-        this.gain.gain.value = 1;
+        this.gain.gain.value = 3;
     
         this.fadeFilter = new FilterFade(0);
 
